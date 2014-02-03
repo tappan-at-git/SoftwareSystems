@@ -5,7 +5,6 @@
  * Engages with the user in a dubiously-legal card-counting excercise.
  * Accepts card names from the user and replies with a running scount based on
  * their values.
-
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,15 +14,16 @@
  * prompt: string prompt to display
  * card_name: buffer where the result is stored
  */
-void get_card_name(char *prompt, char *card_name) 
+void get_card_name(char *prompt, char *card_name_byref) 
 {
   puts(prompt);
   scanf("%2s", card_name);
 }
 
-// converts card names (1-10, [J]ack, [Q]ueen, [K]ing, [A]ce) to a value (1-11).
-// Raises the invalid flag if the card is confusing or out of range.
-int get_card_val(char *card_name,int *val)
+/* Converts card names (1-10, [J]ack, [Q]ueen, [K]ing, [A]ce) to a value (1-11).
+ * Raises the invalid flag if the card is confusing or out of range.
+ */
+int get_card_val(char *card_name,int *val_byref)
 {
     int invalid = 0;
     switch(card_name[0]) {
@@ -47,16 +47,21 @@ int get_card_val(char *card_name,int *val)
     return invalid;
 }
 
-// if val is in a low range, count++. If val is in a high range, count++
-void eval_val(int val, int *count)
+/* if val is in a low range, count++. If val is in a high range, count++
+ */
+void eval_val(int val, int *count_byref)
 {
-  if ((val > 2) && (val < 7)) {  // for some reason we don't care about 2s
+  if ((val >= 2) && (val < 7)) {
     (*count)++;
-  } else if (val == 10) { // aces go home
+  } else if (val == 10) {
     (*count)--;
   }
 }
 
+/* Keeps track of a game of blackjack for the user. 
+ * The count goes up whenever a low card is drawn and goes down with high cards.
+ * Has a bad attitude.
+ */
 int main()
 {
   char card_name[3];
