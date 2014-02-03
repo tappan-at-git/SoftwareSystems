@@ -17,7 +17,7 @@
 void get_card_name(char *prompt, char *card_name_byref) 
 {
   puts(prompt);
-  scanf("%2s", card_name);
+  scanf("%2s", card_name_byref);
 }
 
 /* Converts card names (1-10, [J]ack, [Q]ueen, [K]ing, [A]ce) to a value (1-11).
@@ -30,16 +30,18 @@ int get_card_val(char *card_name,int *val_byref)
     case 'K':
     case 'Q':
     case 'J':
-      *val = 10;
+      *val_byref = 10;
       invalid = 0;
-      break; // exits switch, promptly returns
+      /* exits switch, promptly returns */
+      break;
     case 'A':
-      *val = 11;
+      *val_byref = 11;
       invalid = 0;
-      break; // exits switch, promptly returns
+      /* exits switch, promptly returns */
+      break;
     default:
-      *val = atoi(card_name);
-      if ((*val < 1) || (*val > 10)) {
+      *val_byref = atoi(card_name);
+      if ((*val_byref < 1) || (*val_byref > 10)) {
         invalid = 1;
       }
     }
@@ -52,9 +54,9 @@ int get_card_val(char *card_name,int *val_byref)
 void eval_val(int val, int *count_byref)
 {
   if ((val >= 2) && (val < 7)) {
-    (*count)++;
+    (*count_byref)++;
   } else if (val == 10) {
-    (*count)--;
+    (*count_byref)--;
   }
 }
 
@@ -74,23 +76,23 @@ int main()
   while(running) {
     get_card_name("Enter the card's name, human: ", card_name);
 
-    // check for escape sequence
+    /* check for escape sequence */
     if ((card_name[0] == 'X') || (card_name[0] == 'x')) {
-      running = 0;  // end loop
+      running = 0;  /* end loop */
       continue;
     }
     
-    // convert str card_name -> int val and raise flag if card_name is invalid.
+    /* convert str card_name -> int val and raise flag if card_name is invalid. */
     invalid = get_card_val(card_name, &val);
-    // prompt for new card if the user screwed up
+    /* prompt for new card if the user screwed up */
     if (invalid) {
       puts("You don't actually know the rules to this game, do you?");
-      continue;  // retry
+      continue;  /* retry */
     }
 
-    eval_val(val, &count); // in-/decrement count depending on val
+    eval_val(val, &count); /* in-/decrement count depending on val */
     printf("Current count: %i\n", count);
-  } //loop
+  } /* loop */
 
   return 0;
 }
