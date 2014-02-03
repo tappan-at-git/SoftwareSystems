@@ -1,3 +1,4 @@
+# TODO: Add RMS reporting
 """Modified version of the example code from Janert,
 Feedback Control For Computer Systems
 
@@ -13,7 +14,7 @@ import pandas
 import random
 import matplotlib.pyplot as pyplot
 
-class Buffer:
+class Buffer(object):
     def __init__( self, max_wip, max_flow ):
         """Initializes the buffer:
 
@@ -44,17 +45,21 @@ class Buffer:
 
         return self.queued
 
-class Controller:
-    def __init__( self, kp, ki ):
+class Controller(object):
+    def __init__( self, kp, ki, kd ):
         """Initializes the controller.
 
         kp: proportional gain
         ki: integral gain
+        kd: derivative gain
         """
-        self.kp, self.ki = kp, ki
+        self.kp, self.ki, self.kd = kp, ki, kd
         self.i = 0       # Cumulative error ("integral")
+        # df/dt = (f(t+dt)-f(t))/dt
+        self.e_prior = 0	 # Derivative of error
+        self.has_worked = False
 
-    def work( self, e ):
+    def work( self, e, dt=1 ):
         """Computes the number of jobs to be added to the ready queue.
 
         e: error
@@ -62,29 +67,38 @@ class Controller:
         returns: float number of jobs
         """
         self.i += e
+        if self.has_worked:
+	  deriv = (e-self.e_prior)/dt
+	else:
+	  deriv = 0
+	  self.has_worked = True
+        self.e_prior = e
 
-        return self.kp*e + self.ki*self.i
+        return self.kp*e + self.ki*self.i + self.kd*deriv
 
 # ============================================================
 
-def closed_loop( c, p, tm=5000 ):
+def closed_loop( c, p, tm=5000, func = None):
     """Simulates a closed loop control system.
 
     c: Controller object
     p: Buffer object
     tm: number of time steps
+    func(t) = int: setpoint as a function of time
 
     returns: tuple of sequences (times, targets, errors)
     """
-    def setpoint( t ):
-        if t < 100: return 0
-        if t < 300: return 50
-        return 10
+    def setpoint( t, func=None ):
+      if func is None:
+	if t < 100: return 0
+	if t < 300: return 50
+	return 10
+      else: return func(t)
     
     y = 0
     res = []
     for t in range( tm ):
-        r = setpoint(t)
+        r = setpoint(t,func)
         e = r - y
         u = c.work(e)
         y = p.work(u)
@@ -96,13 +110,14 @@ def closed_loop( c, p, tm=5000 ):
 
 # ============================================================
 
-c = Controller( 1.25, 0.01 )
+c = Controller( kp=1.25, ki=0.01, kd = 1.75 ) # setting ki to 0 makes the number of jobs in the buffer oscillate
+				   # noticeably below the target point.
 p = Buffer( 50, 10 )
 
 # run the simulation
-ts, rs, es, us, ys = closed_loop( c, p, 1000 )
+ts, rs, es, us, ys = closed_loop( c, p, 1000, func = lambda t: (0.005*t)**2+0.02*t+10 )
 
-print 'RMS error', numpy.sqrt(numpy.mean(numpy.array(es)**2))
+# print 'RMS error', numpy.sqrt(numpy.mean(numpy.array(es)**2))
 
 # generate the smoothed curve using a rolling mean
 # (I think the curves in the book use loess)
@@ -110,8 +125,9 @@ ys_smooth = pandas.rolling_mean(numpy.array(ys), 20)
 
 # make the plot
 pyplot.plot(ts, rs, color='green', label='target')
-pyplot.plot(ts, ys, color='red', label='queue length')
+#pyplot.plot(ts, ys, color='red', label='queue length')
 pyplot.plot(ts, ys_smooth, color='blue', label='trend')
+pyplot.legend(['target','queue length'])
 pyplot.show()
 
 
