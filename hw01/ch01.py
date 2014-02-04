@@ -131,10 +131,14 @@ verbose = True
 min_err = -1
 min_tup = () 
 m,n = 0.0,0.0
-print "Begin the long search..." # Brute force PID tuner...0.01%/sec = almost three hours to complete...
+print "Begin the long search..." # Brute force PID tuner...0.005%/sec = almost 
+                                 # six hours to complete...
+# Found least RMS (6.7178633746) with (1.3700000000000003, 0.013600000000000001, 
+# 0.58000000000000029)
 for kd in numpy.arange(0.25,1.25,0.01):
   m += 1.0
-  for ki in numpy.arange(0.00,0.02,0.0001):
+  n = 0
+  for ki in numpy.arange(0.00,0.02,0.0002):
     n += 1.0
     for kp in numpy.arange(1.0,1.5,0.01):
       errs = []
@@ -151,7 +155,7 @@ for kd in numpy.arange(0.25,1.25,0.01):
     print "\n\n{}% done".format(m+n/100)
   print "\n\n{}% done".format(m)
 
-print "\n Found least RMS ({err}) with {tup}=".format(err=min_err, tup=min_tup)
+print "\n Found least RMS ({err}) with {tup}".format(err=min_err, tup=min_tup)
 
 # generate the smoothed curve using a rolling mean
 # (I think the curves in the book use loess)
