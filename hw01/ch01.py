@@ -115,53 +115,65 @@ def test_PID(kp, ki, kd, max_wip=50, max_flow=10, time = 1000):
   p = Buffer( 50, 10 )
   
   # run the simulation
-  ts, rs, es, us, ys = closed_loop( c, p, time, func = lambda t: (0.005*t)**2+0.02*t+10 )
+  ts, rs, es, us, ys = closed_loop( c, p, time,
+                                 func = lambda t: (0.005*t)**2+0.02*t+10 )
+  ys_smooth = pandas.rolling_mean(numpy.array(ys), 20)
+  
+  #make the plot
+  pyplot.plot(ts, rs, color='green', label='target')
+  pyplot.plot(ts, ys, color='red', label='queue length')
+  pyplot.plot(ts, ys_smooth, color='blue', label='trend')
+  pyplot.legend(['target','queue length','trend'])
+  pyplot.show()
   
   # Root Mean Squared error
   return numpy.sqrt(numpy.mean(numpy.array(es)**2))
 # ============================================================
 
-#c = Controller( kp=1.25, ki=0.01, kd = 1.75 ) # setting ki to 0 makes the number of jobs in the buffer oscillate
+kp, ki, kd = (1.37, 0.0136, 0.58)
+#c = Controller( kp, ki, kd ) # setting ki to 0 makes the number of jobs in the 
+                             ## buffer oscillate
 				   ## noticeably below the target point.
 #p = Buffer( 50, 10 )
 
 # run the simulation
 #ts, rs, es, us, ys = closed_loop( c, p, 1000, func = lambda t: (0.005*t)**2+0.02*t+10 )
-verbose = True
-min_err = -1
-min_tup = () 
-m,n = 0.0,0.0
-print "Begin the long search..." # Brute force PID tuner...0.005%/sec = almost 
+print "RMS error = ", test_PID(kp, ki, kd), "\n"
+#verbose = True
+#min_err = -1
+#min_tup = () 
+#m,n = 0.0,0.0
+#print "Begin the long search..." # Brute force PID tuner...0.005%/sec = almost 
                                  # six hours to complete...
 # Found least RMS (6.7178633746) with (1.3700000000000003, 0.013600000000000001, 
 # 0.58000000000000029)
-for kd in numpy.arange(0.25,1.25,0.01):
-  m += 1.0
-  n = 0
-  for ki in numpy.arange(0.00,0.02,0.0002):
-    n += 1.0
-    for kp in numpy.arange(1.0,1.5,0.01):
-      errs = []
-      for reps in range(5):
-        #kp=1.25
-        #ki=0.01
-        #kd = 0.55
-        errs += [test_PID(kp, ki, kd)]
-      mean_err = numpy.mean(errs)
-      #print("Average RMS error ({p}, {i}, {d}): {rms}".format(p = kp, i = ki, d = kd, rms=mean_err))
-      if (min_err == -1) or (min_err > mean_err):
-        min_err, min_tup = mean_err, (kp,ki,kd)
-        if verbose: print "Found new min {err} at {tup}".format(err=min_err,tup=min_tup)
-    print "\n\n{}% done".format(m+n/100)
-  print "\n\n{}% done".format(m)
+#for kd in numpy.arange(0.25,1.25,0.01):
+  #m += 1.0
+  #n = 0
+  #for ki in numpy.arange(0.00,0.02,0.0002):
+    #n += 1.0
+    #for kp in numpy.arange(1.0,1.5,0.01):
+      #errs = []
+      #for reps in range(5):
+        ##kp=1.25
+        ##ki=0.01
+        ##kd = 0.55
+        #errs += [test_PID(kp, ki, kd)]
+      #mean_err = numpy.mean(errs)
+      ##print("Average RMS error ({p}, {i}, {d}): {rms}".format(p = kp, i = ki, d = kd, rms=mean_err))
+      #if (min_err == -1) or (min_err > mean_err):
+        #min_err, min_tup = mean_err, (kp,ki,kd)
+        #if verbose: print "Found new min {err} at {tup}".format(err=min_err,tup=min_tup)
+    #print "\n\n{}% done".format(m+n/100)
+  #print "\n\n{}% done".format(m)
 
-print "\n Found least RMS ({err}) with {tup}".format(err=min_err, tup=min_tup)
+#print "\n Found least RMS ({err}) with {tup}".format(err=min_err, tup=min_tup)
 
 # generate the smoothed curve using a rolling mean
-# (I think the curves in the book use loess)
+## (I think the curves in the book use loess)
 #ys_smooth = pandas.rolling_mean(numpy.array(ys), 20)
 
-# make the plot
+##make the plot
 #pyplot.plot(ts, rs, color='green', label='target')
 #pyplot.plot(ts, ys, color='red', label='queue length')
 #pyplot.plot(ts, ys_smooth, color='blue', label='trend')
