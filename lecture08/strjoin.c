@@ -8,6 +8,7 @@ License: Creative Commons Attribution-ShareAlike 3.0
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 char *tracks[] = {
     "So What",
@@ -22,14 +23,32 @@ char *tracks[] = {
 */
 char *strjoin(char *array[], int n)
 {
-    // TODO: fill this in
-    return NULL;
+    int num_char = 0;
+    
+    int i;
+    for (i = 0; i<n; i++) {
+        num_char += strlen(array[i]);
+    }
+        
+    char *joined = malloc(sizeof(char)*num_char + 1);
+    assert(joined);
+    strcpy(joined,"\0"); 
+    
+    int end = 0;
+    for (i = 0; i<n; i++) {
+        strcpy(joined+end, array[i]);
+        end += strlen(array[i]);
+    }
+    
+    return joined;
 }
 
 
 int main (int argc, char *argv[])
 {
     char *s = strjoin(tracks, 5);
+    
     printf("%s\n", s);
+    free(s);
     return 0;
 }
