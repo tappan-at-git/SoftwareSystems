@@ -86,10 +86,50 @@ float my_random_float2()
   return b.f;
 }
 
-// compute a random double using my algorithm
+// compute a random double using my Allen Downey's algorithm on the range [0,1]
 double my_random_double()
 {
   // TODO: fill this in
+  /* A double has the form:
+   * sign[1]:exponent[11]:fraction[52]
+   * sign should be 0
+   * The exponent is biased by 1023 to get values on the range [-1022,1022]
+   * Exponent values of 0 and 2047 have special meanings (subnormals, etc.)
+   * To be on the range [0,1] we need exponents on the range [0,1023].
+   */
+  long long x;
+  long long mant;
+  long long exp = 1022; // Why does this need to be one less than the bias?
+  long long mask = 1;
+
+  union {
+    double d;
+    long long ll;
+  } b;
+  
+  // generate random bits until we see the first set bit
+  while (1) {
+    x = (((long long) random()) << 32) | (long long) random();
+    x = x;
+    if (x == 0) {
+      exp -= 62;
+    } else {
+      break;
+    }
+  }
+  
+  printf("x: %lli\n",x);
+  // find the location of the first set bit and compute the exponent
+  while (x & mask) {
+    mask <<= 1;
+    exp--;
+  }
+
+  // use the remaining bit as the mantissa
+  mant = x >> 11;
+  b.ll = ((exp << 52) | mant);
+  printf("returning: %lli\n",b.ll);
+  return b.d;
 }
 
 // return a constant (this is a dummy function for time trials)
