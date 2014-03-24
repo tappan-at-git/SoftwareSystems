@@ -14,13 +14,34 @@ License: Creative Commons Attribution-ShareAlike 3.0
 
 /* Here's one way of making a polymorphic object in C */
 
-typedef struct {
+typedef struct val{
     enum Type {INT, STRING} type;
     union {
 	int i;
 	char *s;
     };
+    void (*free) (struct val*);
 } Value;
+
+
+void free_int_value(Value *value) {
+  free(value);
+}
+
+
+void free_string_value(Value *value)
+{
+  if (value->s != NULL) {
+    free(value->s);
+  }
+  free(value);
+}
+
+
+void free_value(Value *value) {
+  value->free(value);
+  value = NULL;
+}
 
 
 /* Makes a Value object that contains an int. */
@@ -29,6 +50,7 @@ Value *make_int_value(int i)
     Value *value = (Value *) malloc (sizeof (Value));
     value->type = INT;
     value->i = i;
+    value->free = free_int_value;
     return value;
 }
 
@@ -39,6 +61,7 @@ Value *make_string_value(char *s)
     Value *value = (Value *) malloc (sizeof (Value));
     value->type = STRING;
     value->s = s;
+    value->free = free_string_value;
     return value;
 }
 
@@ -60,6 +83,7 @@ void print_value (Value *value)
     }
 }
 
+
 // HASHABLE: Represents a key in a key-value pair.
 
 /* Here's another way to make a polymorphic object.
@@ -72,7 +96,7 @@ equal is a pointer to a function that knows how to compare keys.
 
  */
 
-typedef struct {
+typedef struct Hashable {
     void *key;
     int (*hash) (void *);
     int (*equal) (void *, void *);
@@ -90,6 +114,14 @@ Hashable *make_hashable(void *key,
     hashable->hash = hash;
     hashable->equal = equal;
     return hashable;
+}
+
+void free_hashable (Hashable *hashable) {
+  if (hashable != NULL) {
+    free(hashable->key);
+    free(hashable);
+    hashable = NULL;
+  }
 }
 
 
@@ -147,13 +179,16 @@ int equal_string (void *s1, void *s2)
 /* Compares Hashables. */
 int equal_hashable(Hashable *h1, Hashable *h2)
 {
-    if (h1->equal == h2->equal) {
-      return h1->equal (h1->key, h2->key);
-    }
+  // Make sure we're using the same definition of equality.
+  // We could compare them using both methods, but we can't be sure they're the
+  // same type.
+  if (h1->equal == h2->equal) {
+    return h1->equal (h1->key, h2->key);
+  }
 //   Alternate, more pedantic, implementation:
   // If two hashables don't share the same equal function, odds are good that
-  // they're incompatible types. If their hashs functions are different, they
-  // might not make compatible hashes (though seems unlikely). If their keys
+  // they're incompatible types. If their hash functions are different, they
+  // probably won't have the same distribution of hashes. If their keys
   // are different, they're pretty clearly not equal.
 //   if (h1->equal == h2->equal) && (h1->hash == h2->hash) {
 //     return h1->equal (h1->key, h2->key);
@@ -202,6 +237,24 @@ Node *make_node(Hashable *key, Value *value, Node *next)
     node->value = value;
     node->next = next;
     return node;
+}
+
+void free_node(Node *node)
+{
+  if (node != NULL) {
+    free_hashable(node->key);
+    free_value(node->value);
+    free(node);
+    node = NULL;
+  }
+}
+
+void free_list(Node *node)
+{
+  if (node->next != NULL) {
+    free_list(node->next);
+  }
+  free_node(node);
 }
 
 
@@ -273,6 +326,20 @@ Map *make_map(int n)
     m->entries = 0;
     m->index = get_index;
     return m;
+}
+
+void free_map(Map *map)
+{
+  if (map != NULL) {
+    int i;
+    for (i=0; i<map->n; i++) {
+      if (map->lists[i] != NULL) {
+	  free_list(map->lists[i]);
+      }
+    }
+    free(map);
+    map = NULL;
+  }
 }
 
 
