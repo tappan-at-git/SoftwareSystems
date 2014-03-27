@@ -121,12 +121,12 @@ int insert_by_index(Node **head, int val, int index) {
     int i;
     for (i = 0; i < index-1; i++){
         printf("\tindex %d...",i);
+        current = current->next;
         if (current == NULL) {
             printf("failure: Index out of range.\n");
             return -1;
         }
         printf("continuing...\n");
-        current = current->next;
     }
     printf("\tat index %d->val = %d...\n", index,current->val);
     push(&(current->next), val);
