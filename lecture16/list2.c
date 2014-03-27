@@ -104,11 +104,34 @@ void reverse(Node **head) {
 
 // Adds a new element to the list before the indexed element.
 // Index 0 adds an element to the beginning.  Index 1 adds an
-// element between the first and second elements.
+// element between the first and second elements. Index length(list)
+// adds an element after the last element of the list.
 // Returns 0 if successful, -1 if the index is out of range.
 int insert_by_index(Node **head, int val, int index) {
-    // FILL THIS IN
-    return -1;
+    // TODO: FILL THIS IN
+    printf("inserting...\n");
+    Node *new = make_node(val, NULL);
+    Node *current = *head;
+    Node *prev = NULL;
+    int i;
+    for (i = 0; i < index; i++){
+        if (current == NULL) {
+            printf("\tFailure: Index out of range.\n");
+            return -1;
+        }
+        printf("\tcontinuing...\n");
+        Node *prev = current;
+        Node *current = current->next;
+    }
+    printf("\tat index %d...\n", index);
+    new->next = current;
+    if (prev == NULL) {
+        *head = new;
+    } else {
+        prev->next = new;
+    }
+    printf("\tSuccess.\n");
+    return 0;
 }
 
 // Makes a mysterious data structure.
