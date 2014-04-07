@@ -15,11 +15,31 @@ typedef struct {
     int rows, cols;
 } Matrix;
 
+void null_pointer_catch(void *p, char *msg) {
+    if (p == NULL) {
+        perror(msg);
+        exit(-1);
+    }
+}
 
 // Makes a new matrix and sets all elements to zero.
 Matrix *make_matrix(int rows, int cols) {
-    // Fill this in
-    return NULL;
+    // TODO: Fill this in
+    Matrix *M = (Matrix *)malloc(sizeof(Matrix));
+    null_pointer_catch(M,"Malloc failed");
+    M->rows = rows;
+    M->cols = cols;
+    M->data = (double **)malloc(sizeof(double *)*M->rows);
+    null_pointer_catch(M->data,"Malloc failed");
+    int i,j;
+    for (i=0; i<M->rows; i++) {
+        M->data[i] = (double *)malloc(sizeof(double)*M->cols);
+        null_pointer_catch(M->data[i],"Malloc failed");
+        for (j = 0; j<M->cols; j++) {
+            M->data[i][j] = 0;
+        }
+    }
+    return M;
 }
 
 // Prints the elements of a matrix.
@@ -81,33 +101,53 @@ Matrix *add_matrix_func(Matrix *A, Matrix *B) {
 // Performs matrix multiplication and stores the result in the given
 // destination matrix (C).
 void mult_matrix(Matrix *A, Matrix *B, Matrix *C) {
-    // Fill this in
+    // TODO: Fill this in
     // Note that it is asking for matrix multiplication, not
     // elementwise multiplication
+    // C[i][j] = A row i * B col j
+    int i, j, k;
+    double cell;
+    assert(A->rows == B->cols && A->rows == C->rows);
+    assert(A->cols == B->rows && B->cols == C->cols);
+    
+    for (i = 0; i < A->rows; i++){
+        for (j = 0; j < B->cols; j++) {
+            cell = 0;
+            for (k = 0; k < A->cols; k++) {
+                // dot products!
+                cell += (A->data[i][k])*(B->data[k][j]);
+            }
+            C->data[i][j] = cell;
+        }
+    }
 }
 
 // Performs matrix multiplication and returns a new matrix.
 Matrix *mult_matrix_func(Matrix *A, Matrix *B) {
-    // Fill this in
-    return NULL;
+    Matrix *C = make_matrix(A->rows, B->cols);
+    mult_matrix(A, B, C);
+    return C;
 }
 
 int main() {
     Matrix *A = make_matrix(3, 4);
+    null_pointer_catch(A,"make_matrix failed");
     consecutive_matrix(A);
     printf("A\n");
     print_matrix(A);
-
+    
     Matrix *C = add_matrix_func(A, A);
-    printf("A + A\n");
+    printf("\nC = A + A\n");
     print_matrix(C);
-
+    
     Matrix *B = make_matrix(4, 3);
     increment_matrix(B, 1);
-    printf("B\n");
+    printf("\nB\n");
     print_matrix(B);
 
     Matrix *D = mult_matrix_func(A, B);
-    printf("D\n");
+    printf("\nD = A*B\n");
     print_matrix(D);
+    
+    return(0);
 }
