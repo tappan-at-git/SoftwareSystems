@@ -113,7 +113,66 @@ Matrix *mult_matrix_func(Matrix *A, Matrix *B) {
     return C;
 }
 
+double matrix_sum1(Matrix *A) {
+    double total = 0.0;
+    int i, j;
+
+    for (i=0; i<A->rows; i++) {
+	for (j=0; j<A->cols; j++) {
+	    total += A->data[i][j];
+	}
+    }
+    return total;
+}
+    
+double matrix_sum2(Matrix *A) {
+    double total = 0.0;
+    int i, j;
+
+    for (j=0; j<A->cols; j++) {
+	for (i=0; i<A->rows; i++) {
+	    total += A->data[i][j];
+	}
+    }
+    return total;
+}
+    
+
+// Adds up the rows of A and returns a heap-allocated array of doubles.
+double *row_sum(Matrix *A) {
+    double total;
+    int i, j;
+
+    double *res = malloc(A->rows * sizeof(double));
+
+    for (i=0; i<A->rows; i++) {
+	total = 0.0;
+	for (j=0; j<A->cols; j++) {
+	    total += A->data[i][j];
+	}
+	res[i] = total;
+    }
+    return res;
+}
+
+/* 
+   http://en.wikipedia.org/wiki/Magic_square
+
+   A magic square is an arrangement of numbers (usually integers) in a
+   square grid, where the numbers in each row, and in each column, and
+   the numbers in the forward and backward main diagonals, all add up
+   to the same number. 
+
+   Write a function called is_magic_square() that takes a matrix and 
+   returns an int, 1 if the matrix is a magic square, and 0 otherwise.
+
+   Feel free to use row_sum().
+*/
+
+
 int main() {
+    int i;
+
     Matrix *A = make_matrix(3, 4);
     consecutive_matrix(A);
     printf("A\n");
@@ -131,4 +190,18 @@ int main() {
     Matrix *D = mult_matrix_func(A, B);
     printf("D\n");
     print_matrix(D);
+
+    double sum = matrix_sum1(A);
+    printf("sum = %lf\n", sum);
+
+    sum = matrix_sum2(A);
+    printf("sum = %lf\n", sum);
+
+    double *sums = row_sum(A);
+    for (i=0; i<A->rows; i++) {
+	printf("row %d\t%lf\n", i, sums[i]);
+    }
+    // should print 6, 22, 38
+
+    return 0;
 }
