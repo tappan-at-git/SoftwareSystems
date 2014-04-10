@@ -113,6 +113,23 @@ Matrix *mult_matrix_func(Matrix *A, Matrix *B) {
     return C;
 }
 
+
+/* In matrix2.c there are two versions of matrix_sum: one traverses the rows
+ * and one traverses the columns. Assuming that the matrix is bigger than the 
+ * memory cache and that a memory cache line is big enough to hold 8 matrix
+ * elements, what cache hit rate would you expect for each version of
+ * matrix_sum? Explain your reasoning.
+ */
+/* A = array of doubles
+ * cache line = 8 matrix elements
+ * 1 miss at each new row, 7 hits, 1 miss...
+ * sum1 is the "Best" case, with 1 miss/7 hits in cache line + a good chance of
+ * pre-emptively loading spatially localized data into the cache.
+ * sum2 is the worst case, with a lot of misses.
+ * If the cache is small enough we may need to cache new data every fetch.
+ * Otherwise, we'll have some data in the cache from the last time we were in the
+ * row...still a miss, but at least not as big a miss.
+ */
 double matrix_sum1(Matrix *A) {
     double total = 0.0;
     int i, j;
@@ -155,6 +172,52 @@ double *row_sum(Matrix *A) {
     return res;
 }
 
+// Adds up the columns of A and returns a heap-allocated array of doubles.
+double *col_sum(Matrix *A) {
+    double total;
+    int i, j;
+    
+    double *res = malloc(A->rows * sizeof(double));
+    
+    for (i=0; i<A->cols; i++) {
+        total = 0.0;
+        for (j=0; j<A->rows; j++) {
+            total += A->data[j][i];
+        }
+        res[i] = total;
+    }
+    return res;
+}
+
+// Adds up the diagonals of A and returns a heap-allocated array of doubles.
+double *diag_sum(Matrix *A) {
+    int i;
+    
+    // Unlike columns and rows, A will only have 2 (forward and backward)
+    // diagonals.
+    double *res = malloc(2 * sizeof(double));
+    res[0] = 0.0;
+    res[1] = 0.0;
+    
+    // A is not *necessarily* a square matrix
+    for (i=0; (i < A->rows) && (i < A->cols); i++) {
+        res[0] += A->data[i][i];
+        res[1] += A->data[A->rows-1 - i][A->cols-1 - i];
+    }
+    return res;
+}
+
+
+int is_uniform_vector(double *V, int len, double base) {
+    int i;
+    for (i = 1; i < len; i++) {
+        if (V[i] != base) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /* 
    http://en.wikipedia.org/wiki/Magic_square
 
@@ -168,6 +231,26 @@ double *row_sum(Matrix *A) {
 
    Feel free to use row_sum().
 */
+int is_magic_square(Matrix *M) {
+    // adding rows should be fastest due to caching, check that first
+    double *row_sums = row_sum(M);
+    double magnum = row_sums[0];
+    if (!is_uniform_vector(row_sums,M->rows,magnum)) {
+        return 0;
+    }
+    free(row_sums); // tidy tidy
+    
+    // adding columns is slower, since it's more likely for the data to be
+    // spatially distant
+    double *col_sums = col_sum(M);
+    if (!is_uniform_vector(col_sums,M->cols,magnum)) {
+        return 0;
+    }
+    free(col_sums);
+    
+    double *diag_sums = diag_sum(M);
+    return (diag_sums[0] == magnum) && (diag_sums[1] == magnum);
+}
 
 
 int main() {
@@ -190,12 +273,13 @@ int main() {
     Matrix *D = mult_matrix_func(A, B);
     printf("D\n");
     print_matrix(D);
+    
 
     double sum = matrix_sum1(A);
-    printf("sum = %lf\n", sum);
+    printf("sum(A) = %lf\n", sum);
 
     sum = matrix_sum2(A);
-    printf("sum = %lf\n", sum);
+    printf("sum2(A) = %lf\n", sum);
 
     double *sums = row_sum(A);
     for (i=0; i<A->rows; i++) {
@@ -203,5 +287,15 @@ int main() {
     }
     // should print 6, 22, 38
 
+    
+    Matrix *E = make_matrix(3,3);
+    increment_matrix(E, 1);
+    printf("\nE ");
+    if (is_magic_square(E)) {
+        printf("is magic! Whizzam!\n");
+    } else {
+        printf("isn't magic...\n");
+    }
+    print_matrix(E);
     return 0;
 }
